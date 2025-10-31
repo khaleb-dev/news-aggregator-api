@@ -24,7 +24,7 @@ class Article extends Model
         'keywords',
         'author',
         'image_url',
-        'published_on',
+        'published_at',
     ];
 
 }

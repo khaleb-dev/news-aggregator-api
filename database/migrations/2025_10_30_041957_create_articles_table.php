@@ -17,12 +17,13 @@ return new class extends Migration
             $table->string('title');
             $table->text('content');
             $table->string('source');
-            $table->string('url');
             $table->string('category')->default('news');
             $table->string('keywords')->nullable();
             $table->json('authors')->nullable();
-            $table->string('image_url')->nullable();
-            $table->timestamp('published_on')->nullable();
+            // used to store URLs because some URLs were too long.
+            $table->text('url');
+            $table->text('image_url')->nullable();
+            $table->timestamp('published_at')->nullable();
 
             $table->timestamps();
             $table->softDeletes();
