@@ -45,7 +45,12 @@ class SyncArticleFromSourcesSchedule {
             $now = now();
 
             foreach ($articles as $article) {
-                $key = $article['title'] . '|' . $article['dateTimePub'];
+                // Format the API datetime to match database format for comparison
+                $formattedDateTime = $article['dateTimePub'] 
+                    ? Carbon::parse($article['dateTimePub'])->format('Y-m-d H:i:s') 
+                    : null;
+                
+                $key = $article['title'] . '|' . $formattedDateTime;
                 
                 if (!isset($existingSet[$key])) {
                     $categoryLabels = '';
@@ -61,7 +66,6 @@ class SyncArticleFromSourcesSchedule {
                         'image_url' => $article['image'] ?? null,
                         'published_at' => $article['dateTimePub'] ? Carbon::parse($article['dateTimePub']) : null,
                         'category' => $categoryLabels,
-                        'source' => $datasource,
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];
