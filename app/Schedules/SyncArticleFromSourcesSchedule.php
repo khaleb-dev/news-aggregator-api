@@ -14,10 +14,16 @@ class SyncArticleFromSourcesSchedule {
     public function __invoke()
     {
         Log::info('==============Running ArticleSync Schedule: STARTED==============');
-        $ds = new ArticleGatewayService('NewsApiAi');
-        $res = $ds->fetchArticles();
+        $newsSources = ['NewsApiAi', 'NewsApiOrg'];
 
-        $this->storeInDatabase($res['data'], 'NewsApiAi');
+        foreach ($newsSources as $provider) {
+            Log::info("Fetching articles from {$provider}");
+            
+            $ds = new ArticleGatewayService($provider);
+            $res = $ds->fetchArticles();
+            
+            $this->storeInDatabase($res['data'], $provider);
+        }
         
         Log::info('==============Running ArticleSync Schedule: ENDED==============');
     }
@@ -26,10 +32,13 @@ class SyncArticleFromSourcesSchedule {
     private function storeInDatabase(mixed $articles, string $datasource): bool
     {
         if (empty($articles)) {
+            Log::info('=********==No Data found in ' . $datasource . '==********=');
             return true;
         }
 
         try {
+            Log::info('==============Storing data from ' . $datasource . '==============');
+
             DB::beginTransaction();
 
             // Get all existing titles and published_at combinations in one query
@@ -45,9 +54,11 @@ class SyncArticleFromSourcesSchedule {
             $now = now();
 
             foreach ($articles as $article) {
-                // Format the API datetime to match database format for comparison
-                $formattedDateTime = $article['dateTimePub'] 
-                    ? Carbon::parse($article['dateTimePub'])->format('Y-m-d H:i:s') 
+                // Use the same field logic for both comparison and insertion
+                $dateField = $article['dateTimePub'] ?? $article['publishedAt'] ?? null;
+                
+                $formattedDateTime = $dateField 
+                    ? Carbon::parse($dateField)->format('Y-m-d H:i:s') 
                     : null;
                 
                 $key = $article['title'] . '|' . $formattedDateTime;
@@ -57,15 +68,24 @@ class SyncArticleFromSourcesSchedule {
                     if (isset($article['category']) && is_array($article['category'])) {
                         $categoryLabels = implode(', ', array_column($article['category'], 'label'));
                     }
+
+                    $authors = '';
+                    if (isset($article['authors']) && is_array($article['authors'])) {
+                        $authors = implode(', ', array_column($article['authors'], 'name'));
+                    } else {
+                        $authors = $article['author'] ?? 'Unknown';
+                    }
+
                     $insertData[] = [
                         'id' => Str::uuid()->toString(),
                         'source' => $datasource,
                         'title' => $article['title'] ?? 'No Title',
-                        'content' => $article['body'] ?? 'No Content',
+                        'content' => $article['body'] ?? $article['content'] ?? 'No Content',
                         'url' => $article['url'] ?? null,
-                        'image_url' => $article['image'] ?? null,
-                        'published_at' => $article['dateTimePub'] ? Carbon::parse($article['dateTimePub']) : null,
+                        'image_url' => $article['image'] ?? $article['urlToImage'] ?? null,
+                        'published_at' => $dateField ? Carbon::parse($dateField) : null,
                         'category' => $categoryLabels,
+                        'authors' => $authors ?? 'Unknown',
                         'created_at' => $now,
                         'updated_at' => $now,
                     ];

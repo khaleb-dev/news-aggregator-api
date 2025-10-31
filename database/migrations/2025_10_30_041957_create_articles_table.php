@@ -19,7 +19,7 @@ return new class extends Migration
             $table->string('source');
             $table->string('category')->default('news');
             $table->string('keywords')->nullable();
-            $table->json('authors')->nullable();
+            $table->text('authors')->nullable();
             // used to store URLs because some URLs were too long.
             $table->text('url');
             $table->text('image_url')->nullable();

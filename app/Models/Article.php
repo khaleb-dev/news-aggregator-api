@@ -22,7 +22,7 @@ class Article extends Model
         'url',
         'category',
         'keywords',
-        'author',
+        'authors',
         'image_url',
         'published_at',
     ];
