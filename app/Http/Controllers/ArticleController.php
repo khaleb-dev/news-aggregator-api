@@ -3,14 +3,15 @@
 namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
+use App\Models\Article;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
 
-class NewsController extends Controller
+class ArticleController extends Controller
 {
     /**
-     * Fetch News Articles
+     * Fetch Articles
      * 
      * @param Request $request
      * @return JsonResponse
@@ -18,10 +19,12 @@ class NewsController extends Controller
      */
     public function index(Request $request): JsonResponse
     {     
+        $data = Article::find();
+
         return response()->json([
             'status' => 'success',
             'message' => 'Data Retrieved successfully.',
-            'data' => []
+            'data' => $data
         ], 200);
     }
    

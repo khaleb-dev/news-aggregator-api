@@ -1,6 +1,6 @@
 <?php
 
-use App\Http\Controllers\NewsController;
+use App\Http\Controllers\ArticleController;
 // use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -8,4 +8,4 @@ use Illuminate\Support\Facades\Route;
 //     return $request->user();
 // })->middleware('auth:sanctum');
 
-Route::get('/news', [NewsController::class, 'index']);
+Route::get('/articles', [ArticleController::class, 'index']);
