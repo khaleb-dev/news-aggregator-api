@@ -29,4 +29,5 @@ To run this project, you will need api keys from each of this platforms.
 3. Run ```php artisan migrate:fresh``` to migrate database schema.
 4. Run ```php artisan serve``` to start the project.
 5. Open http://127.0.0.1:8000/docs/api to view its api documentation.
+6. I used Laravel's schedule to perform the background sync. You can try it using this command: ```php artisan schedule:run```
 
