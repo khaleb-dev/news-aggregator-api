@@ -4,7 +4,6 @@ namespace App\Schedules;
 
 
 use App\Http\Services\ArticleGatewayService;
-use App\Models\Article;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -14,14 +13,18 @@ class SyncArticleFromSourcesSchedule {
     public function __invoke()
     {
         Log::info('==============Running ArticleSync Schedule: STARTED==============');
-        $newsSources = ['NewsApiAi', 'NewsApiOrg'];
+        $newsSources = ['NewsApiAi', 'NewsApiOrg', 'TheGuardian'];
 
         foreach ($newsSources as $provider) {
             Log::info("Fetching articles from {$provider}");
             
             $ds = new ArticleGatewayService($provider);
-            $res = $ds->fetchArticles();
-            
+
+            // I am limiting to first page with total of 100 records on each call for demo;
+            $page = 1;
+            $count = 100;
+            $res = $ds->fetchArticles($page, $count);
+
             $this->storeInDatabase($res['data'], $provider);
         }
         
@@ -55,13 +58,13 @@ class SyncArticleFromSourcesSchedule {
 
             foreach ($articles as $article) {
                 // Use the same field logic for both comparison and insertion
-                $dateField = $article['dateTimePub'] ?? $article['publishedAt'] ?? null;
+                $dateField = $article['dateTimePub'] ?? $article['publishedAt'] ?? $article['webPublicationDate'] ?? null;
                 
                 $formattedDateTime = $dateField 
                     ? Carbon::parse($dateField)->format('Y-m-d H:i:s') 
                     : null;
-                
-                $key = $article['title'] . '|' . $formattedDateTime;
+                $title = $article['title'] ?? $article['webTitle'] ?? 'No Title';
+                $key = $title . '|' . $formattedDateTime;
                 
                 if (!isset($existingSet[$key])) {
                     $categoryLabels = '';
@@ -79,9 +82,9 @@ class SyncArticleFromSourcesSchedule {
                     $insertData[] = [
                         'id' => Str::uuid()->toString(),
                         'source' => $datasource,
-                        'title' => $article['title'] ?? 'No Title',
+                        'title' => $title,
                         'content' => $article['body'] ?? $article['content'] ?? 'No Content',
-                        'url' => $article['url'] ?? null,
+                        'url' => $article['url'] ?? $article['webUrl'] ?? null,
                         'image_url' => $article['image'] ?? $article['urlToImage'] ?? null,
                         'published_at' => $dateField ? Carbon::parse($dateField) : null,
                         'category' => $categoryLabels,
